@@ -138,6 +138,9 @@ function Index() {
             <div className="flex flex-col items-center justify-center gap-3 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-xl">😿</div>
               <p className="text-lg font-semibold text-card-foreground">Oops! Something went wrong. Please try again</p>
+              {errorDetail && (
+                <p className="max-w-sm text-xs text-muted-foreground">{errorDetail}</p>
+              )}
             </div>
           )}
         </div>
