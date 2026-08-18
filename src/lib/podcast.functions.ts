@@ -39,12 +39,19 @@ export const generatePodcast = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const response = await fetch(WEBHOOK_URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: data.text }),
     });
+
+    const contentType = response.headers.get("content-type") ?? "";
+
+    // n8n can respond with the audio binary itself instead of a JSON link.
+    if (response.ok && /^(audio|application\/octet-stream)/i.test(contentType)) {
+      const buffer = await response.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+      const mime = contentType.startsWith("audio") ? contentType.split(";")[0] : "audio/mpeg";
+      return { audioFile: `data:${mime};base64,${base64}` };
+    }
 
     const rawText = await response.text();
 
@@ -65,14 +72,19 @@ export const generatePodcast = createServerFn({ method: "POST" })
     try {
       parsedBody = JSON.parse(rawText);
     } catch {
-      throw new Error("The podcast service returned an unreadable response.");
+      throw new Error(`Unexpected response from the podcast service: ${rawText.slice(0, 200)}`);
     }
 
     const audioFile = findAudioUrl(parsedBody);
     if (!audioFile) {
-      throw new Error("The podcast service did not return an audio link.");
+      const base64Audio = findBase64Audio(parsedBody);
+      if (base64Audio) return { audioFile: `data:audio/mpeg;base64,${base64Audio}` };
+      throw new Error(
+        `The podcast service replied without an audio link: ${rawText.slice(0, 200)}`,
+      );
     }
 
     return { audioFile };
+
   });
 
