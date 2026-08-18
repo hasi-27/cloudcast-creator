@@ -34,6 +34,31 @@ function findAudioUrl(value: unknown, depth = 0): string | undefined {
   return undefined;
 }
 
+function findBase64Audio(value: unknown, depth = 0): string | undefined {
+  if (depth > 5 || value == null) return undefined;
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findBase64Audio(item, depth + 1);
+      if (found) return found;
+    }
+    return undefined;
+  }
+  if (typeof value === "object") {
+    const obj = value as Record<string, unknown>;
+    for (const key of ["data", "base64", "audio", "audioBase64", "audioFile"]) {
+      const candidate = obj[key];
+      if (typeof candidate === "string" && candidate.length > 500 && !/\s/.test(candidate)) {
+        return candidate.replace(/^data:[^,]+,/, "");
+      }
+    }
+    for (const item of Object.values(obj)) {
+      const found = findBase64Audio(item, depth + 1);
+      if (found) return found;
+    }
+  }
+  return undefined;
+}
+
 export const generatePodcast = createServerFn({ method: "POST" })
   .validator((input) => requestSchema.parse(input))
   .handler(async ({ data }) => {
