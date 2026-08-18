@@ -1,5 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
+
+import { generatePodcast } from "../lib/podcast.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -17,14 +20,24 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const [topic, setTopic] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "coming-soon">("idle");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const generatePodcastFn = useServerFn(generatePodcast);
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!topic.trim()) return;
+
     setStatus("loading");
-    setTimeout(() => {
-      setStatus("coming-soon");
-    }, 2500);
+    setAudioUrl(null);
+
+    try {
+      const { audioFile } = await generatePodcastFn({ data: { text: topic.trim() } });
+      setAudioUrl(audioFile);
+      setStatus("success");
+      setTopic("");
+    } catch {
+      setStatus("error");
+    }
   };
 
   return (
@@ -93,15 +106,28 @@ function Index() {
                 <span className="dot-pulse h-3 w-3 rounded-full bg-primary" style={{ animationDelay: "160ms" }} />
                 <span className="dot-pulse h-3 w-3 rounded-full bg-primary" style={{ animationDelay: "320ms" }} />
               </div>
-              <p className="text-sm font-medium text-bubble-foreground">Generating your podcast...</p>
+              <p className="text-sm font-medium text-bubble-foreground">Creating podcast... please wait!</p>
             </div>
           )}
 
-          {status === "coming-soon" && (
+          {status === "success" && audioUrl && (
+            <div className="flex flex-col items-center justify-center gap-4 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-soft text-xl">🎉</div>
+              <p className="text-lg font-semibold text-card-foreground">Podcast is ready! Click play to listen</p>
+              <audio
+                controls
+                src={audioUrl}
+                className="w-full max-w-md rounded-xl"
+                aria-label="Generated podcast audio"
+              />
+            </div>
+          )}
+
+          {status === "error" && (
             <div className="flex flex-col items-center justify-center gap-3 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-warm text-xl">✨</div>
-              <p className="text-lg font-semibold text-card-foreground">Feature coming soon!</p>
-              <p className="text-sm text-muted-foreground">We’re brewing something special for “{topic}”.</p>
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/20 text-xl">😿</div>
+              <p className="text-lg font-semibold text-card-foreground">Oops! Something went wrong.</p>
+              <p className="text-sm text-muted-foreground">Please try again.</p>
             </div>
           )}
         </div>
