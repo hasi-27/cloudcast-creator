@@ -30,11 +30,13 @@ function Index() {
   const [topic, setTopic] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [errorDetail, setErrorDetail] = useState<string | null>(null);
 
   const handleGenerate = async () => {
     if (!topic.trim()) return;
 
     setAudioUrl(null);
+    setErrorDetail(null);
     setStatus("loading");
 
     try {
@@ -42,10 +44,12 @@ function Index() {
       setAudioUrl(result.audioFile);
       setStatus("success");
       setTopic("");
-    } catch {
+    } catch (error) {
+      setErrorDetail(error instanceof Error ? error.message : null);
       setStatus("error");
     }
   };
+
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12 sm:px-6 lg:px-8">
@@ -134,6 +138,9 @@ function Index() {
             <div className="flex flex-col items-center justify-center gap-3 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-xl">😿</div>
               <p className="text-lg font-semibold text-card-foreground">Oops! Something went wrong. Please try again</p>
+              {errorDetail && (
+                <p className="max-w-sm text-xs text-muted-foreground">{errorDetail}</p>
+              )}
             </div>
           )}
         </div>
