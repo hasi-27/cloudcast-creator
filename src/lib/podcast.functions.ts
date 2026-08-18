@@ -13,7 +13,7 @@ const responseSchema = z.object({
 });
 
 export const generatePodcast = createServerFn({ method: "POST" })
-  .inputValidator((input) => requestSchema.parse(input))
+  .validator((input) => requestSchema.parse(input))
   .handler(async ({ data }) => {
     const response = await fetch(WEBHOOK_URL, {
       method: "POST",
