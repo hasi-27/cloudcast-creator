@@ -30,11 +30,13 @@ function Index() {
   const [topic, setTopic] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [errorDetail, setErrorDetail] = useState<string | null>(null);
 
   const handleGenerate = async () => {
     if (!topic.trim()) return;
 
     setAudioUrl(null);
+    setErrorDetail(null);
     setStatus("loading");
 
     try {
@@ -42,10 +44,12 @@ function Index() {
       setAudioUrl(result.audioFile);
       setStatus("success");
       setTopic("");
-    } catch {
+    } catch (error) {
+      setErrorDetail(error instanceof Error ? error.message : null);
       setStatus("error");
     }
   };
+
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12 sm:px-6 lg:px-8">
