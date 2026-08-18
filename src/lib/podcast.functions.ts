@@ -8,7 +8,7 @@ const responseSchema = z.object({
 });
 
 export const generatePodcast = createServerFn({ method: "POST" })
-  .inputValidator((data) => requestSchema.parse(data))
+  .validator((data) => requestSchema.parse(data))
   .handler(async ({ data }) => {
     const webhookUrl = "https://workflow.ccbp.in/webhook/5d70fd07-8b96-4251-99f1-1b3a58e08f25";
 
